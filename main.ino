@@ -52,7 +52,7 @@ void setup() {
 void loop() {
   static unsigned int lastPress = 0;
 
-  if (buttonPressed) {
+  if ((buttonPressed) && (press < 7)){
     buttonPressed = false;
     press++;
 
@@ -64,6 +64,10 @@ void loop() {
       pCharacteristic->notify();
     }
   }
+  else if ((buttonPressed) && (press = 7)){
+    press = 0;
 
+
+  }
   delay(50);
 }
