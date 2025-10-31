@@ -6,7 +6,7 @@
 volatile bool buttonPressed = false;
 unsigned int press = 0;
 
-const int interruptPin = 2;  // <<< Troquei para pino seguro!
+const int interruptPin = 2;  
 
 #define SERVICE_UUID        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 #define CHARACTERISTIC_UUID "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
@@ -46,7 +46,7 @@ void setup() {
   pService->start();
 
   pServer->getAdvertising()->start();
-  Serial.println("🔵 BLE pronto. Conecte-se com o app BLE para ver o valor de 'press'.");
+  Serial.println("🔵 BLE pronto.");
 }
 
 void loop() {
@@ -65,9 +65,14 @@ void loop() {
     }
   }
   else if ((buttonPressed) && (press = 7)){
+     buttonPressed = false;
     press = 0;
+    Serial.println("🔄 Resetando contagem para 0");
 
-
+    if (deviceConnected) {
+      pCharacteristic->setValue("Press: 0");
+      pCharacteristic->notify();
+    }
   }
   delay(50);
 }
