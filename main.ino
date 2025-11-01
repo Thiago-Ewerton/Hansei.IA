@@ -36,7 +36,7 @@ void setup() {
   pinMode(interruptPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, FALLING);
 
-  BLEDevice::init("ESP32_BLE_Interrupt");
+  BLEDevice::init("ESP32_ESTESIdig");
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
