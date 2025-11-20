@@ -4,9 +4,12 @@
 #include <BLE2902.h>
 
 volatile bool buttonPressed = false;
+volatile bool resetPressed = false;   // <-- nova interrupção
+
 unsigned int press = 0;
 
-const int interruptPin = 2;  
+const int interruptPin = 0;   // botão 1
+const int resetPin = 1;       // <-- botão 2 (defina o pino que deseja)
 
 // UUIDs para o serviço e característica BLE
 #define SERVICE_UUID        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
@@ -16,12 +19,17 @@ BLEServer *pServer = NULL;
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
 
-// Função de interrupção para detectar o pressionamento do botão
+// Interrupção do botão 1
 void IRAM_ATTR handleInterrupt() {
   buttonPressed = true;
 }
 
-// Callbacks para conexão/desconexão do cliente BLE
+// Interrupção do botão 2 (reset)
+void IRAM_ATTR handleResetInterrupt() {
+  resetPressed = true;
+}
+
+// Callbacks BLE
 class MyServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
     deviceConnected = true;
@@ -36,46 +44,52 @@ class MyServerCallbacks : public BLEServerCallbacks {
 void setup() {
   Serial.begin(115200);
 
-  // Configura o pino do botão com pull-up interno e anexa a interrupção
+  // Configuração dos botões
   pinMode(interruptPin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, FALLING);
+  pinMode(resetPin, INPUT_PULLUP);
 
+  attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(resetPin), handleResetInterrupt, FALLING);
+
+  // BLE
   BLEDevice::init("ESP32_ESTESIdig");
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
-  // Cria o serviço BLE e a característica 
   BLEService *pService = pServer->createService(SERVICE_UUID);
-  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_NOTIFY);
+  pCharacteristic = pService->createCharacteristic(
+      CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_NOTIFY
+  );
+
   pCharacteristic->addDescriptor(new BLE2902());
   pService->start();
-// Inicia a publicidade BLE
+
   pServer->getAdvertising()->start();
   Serial.println("🔵 BLE pronto.");
 }
 
 void loop() {
-  // Variável estática para evitar múltiplas contagens por um único pressionamento
-  static unsigned int lastPress = 0;
 
-  // Verifica se o botão foi pressionado
-  if ((buttonPressed) && (press < 7)){
+  // Botão 1 → Contador
+  if ((buttonPressed) && (press < 7)) {
     buttonPressed = false;
     press++;
 
-    Serial.printf("Press: %u\n", press);
+    Serial.print(press);
 
-// Atualiza a característica BLE com o novo valor de press
     if (deviceConnected) {
-      String msg = "Press: " + String(press);
+      String msg = String(press);
       pCharacteristic->setValue(msg.c_str());
       pCharacteristic->notify();
     }
   }
-  // Verifica se o contador atingiu 7 para resetar
-  else if ((buttonPressed) && (press = 7)){
-     buttonPressed = false;
+
+  // Botão 1 → Reset automático ao chegar em 7
+  else if (buttonPressed && press == 7) {
+    buttonPressed = false;
     press = 0;
+
     Serial.println("🔄 Resetando contagem para 0");
 
     if (deviceConnected) {
@@ -83,6 +97,20 @@ void loop() {
       pCharacteristic->notify();
     }
   }
+
+  // Botão 2 → Reset manual + mensagem "Enviado"
+  if (resetPressed) {
+    resetPressed = false;
+
+    Serial.println("Enviado");
+
+    if (deviceConnected) {
+      pCharacteristic->setValue(String(press));
+      pCharacteristic->setValue("Enviado");
+      pCharacteristic->notify();
+    }
+    press = 0;
+  }
+
   delay(50);
 }
-
