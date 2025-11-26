@@ -3,6 +3,9 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+#include "MotorControl.h"
+
+
 volatile bool buttonPressed = false;
 volatile bool resetPressed = false;   // <-- nova interrupção
 
@@ -10,6 +13,9 @@ unsigned int press = 0;
 
 const int interruptPin = 0;   // botão 1
 const int resetPin = 1;       // <-- botão 2 (defina o pino que deseja)
+
+
+MotorControl motor(3, 4);   // PWM_A, PWM_B
 
 // UUIDs para o serviço e característica BLE
 #define SERVICE_UUID        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
@@ -43,6 +49,8 @@ class MyServerCallbacks : public BLEServerCallbacks {
 
 void setup() {
   Serial.begin(115200);
+  motor.begin();// biblioteca motor.h
+
 
   // Configuração dos botões
   pinMode(interruptPin, INPUT_PULLUP);
@@ -83,6 +91,9 @@ void loop() {
       pCharacteristic->setValue(msg.c_str());
       pCharacteristic->notify();
     }
+
+    motor.runSequence(press);
+
   }
 
   // Botão 1 → Reset automático ao chegar em 7
