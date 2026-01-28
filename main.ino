@@ -12,7 +12,7 @@ volatile bool resetPressed = false;   // <-- nova interrupção
 unsigned int press = 0;
 
 const int interruptPin = 0;   // botão 1
-const int resetPin = 1;       // <-- botão 2 (defina o pino que deseja)
+const int resetPin = 1;       // <-- botão 2 
 
 
 MotorControl motor(3, 4);   // PWM_A, PWM_B
