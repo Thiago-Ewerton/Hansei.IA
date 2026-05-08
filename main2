@@ -1,0 +1,65 @@
+/*
+   ESP32-C3 Super Mini + TMC2209
+   Movimento simples:
+   - gira para um lado
+   - espera
+   - gira para o outro
+
+   Ligações:
+   -------------------------
+   DIR    -> GPIO 10
+   STEP   -> GPIO 6
+   ENABLE -> GPIO 4
+*/
+
+#define EN_PIN    8
+#define DIR_PIN   10
+#define STEP_PIN  9
+
+const int velocidade = 250; // menor = mais rápido
+
+void passo() {
+  digitalWrite(STEP_PIN, HIGH);
+  delayMicroseconds(velocidade);
+
+  digitalWrite(STEP_PIN, LOW);
+  delayMicroseconds(velocidade);
+}
+
+void setup() {
+
+  Serial.begin(115200);
+
+  pinMode(EN_PIN, OUTPUT);
+  pinMode(DIR_PIN, OUTPUT);
+  pinMode(STEP_PIN, OUTPUT);
+
+  digitalWrite(EN_PIN, LOW); // habilita driver
+
+  Serial.println("Motor iniciado");
+}
+
+void loop() {
+
+  // sentido 1
+  Serial.println("Horario");
+
+  digitalWrite(DIR_PIN, HIGH);
+
+  for (int i = 0; i < 2000; i++) {
+    passo();
+  }
+
+  delay(1000);
+
+  // sentido 2
+  Serial.println("Anti-horario");
+
+  digitalWrite(DIR_PIN, LOW);
+
+  for (int i = 0; i < 2000; i++) {
+    passo();
+  }
+
+  delay(1000);
+}
