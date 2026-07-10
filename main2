@@ -8,15 +8,17 @@
    Ligações:
    -------------------------
    DIR    -> GPIO 10
-   STEP   -> GPIO 6
-   ENABLE -> GPIO 4
+   STEP   -> GPIO 9
+   ENABLE -> GPIO 8
 */
 
 #define EN_PIN    8
 #define DIR_PIN   10
 #define STEP_PIN  9
 
-const int velocidade = 250; // menor = mais rápido
+const int velocidade = 400; // maior = mais lento
+
+long contadorPassos = 0;
 
 void passo() {
   digitalWrite(STEP_PIN, HIGH);
@@ -48,7 +50,11 @@ void loop() {
 
   for (int i = 0; i < 2000; i++) {
     passo();
+    contadorPassos++;
   }
+
+  Serial.print("Posicao: ");
+  Serial.println(contadorPassos);
 
   delay(1000);
 
@@ -59,7 +65,11 @@ void loop() {
 
   for (int i = 0; i < 2000; i++) {
     passo();
+    contadorPassos--;
   }
+
+  Serial.print("Posicao: ");
+  Serial.println(contadorPassos);
 
   delay(1000);
 }
