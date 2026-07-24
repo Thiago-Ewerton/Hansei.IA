@@ -1,9 +1,10 @@
 /*
    ESP32-C3 Super Mini + TMC2209
-   Movimento simples:
-   - gira para um lado
-   - espera
-   - gira para o outro
+   Controle de força por Serial (0 a 7)
+   - Digite um número de 0 a 7 no Serial Monitor
+   - O motor avança com a força escolhida
+   - Depois retorna para a posição inicial
+   - E fica aguardando o próximo comando
 
    Ligações:
    -------------------------
@@ -16,11 +17,16 @@
 #define DIR_PIN   10
 #define STEP_PIN  9
 
-const int velocidade = 400; // maior = mais lento
+// Delay em microssegundos para cada nível de força (0 = mais fraco/lento, 7 = mais forte/rápido)
+// Quanto MENOR o delay, mais rápido o motor gira (mais "força" aparente)
+const int forcaVelocidade[8] = {900, 800, 700, 600, 500, 400, 300, 200};
+
+// Quantidade de passos que o motor vai avançar em cada acionamento
+const int passosMovimento = 2000;
 
 long contadorPassos = 0;
 
-void passo() {
+void passo(int velocidade) {
   digitalWrite(STEP_PIN, HIGH);
   delayMicroseconds(velocidade);
 
@@ -29,7 +35,6 @@ void passo() {
 }
 
 void setup() {
-
   Serial.begin(115200);
 
   pinMode(EN_PIN, OUTPUT);
@@ -43,33 +48,43 @@ void setup() {
 
 void loop() {
 
-  // sentido 1
-  Serial.println("Horario");
+  if (Serial.available() > 0) {
+    int nivel = Serial.parseInt();
 
-  digitalWrite(DIR_PIN, HIGH);
+    // Limpa qualquer lixo restante no buffer (ex: '\n')
+    while (Serial.available() > 0) {
+      Serial.read();
+    }
 
-  for (int i = 0; i < 2000; i++) {
-    passo();
-    contadorPassos++;
+    if (nivel >= 0 && nivel <= 7) {
+
+      int velocidade = forcaVelocidade[nivel];
+
+      Serial.print("Forca selecionada: ");
+      Serial.println(nivel);
+
+      // Vai para frente
+      digitalWrite(DIR_PIN, HIGH);
+      for (int i = 0; i < passosMovimento; i++) {
+        passo(velocidade);
+        contadorPassos++;
+      }
+
+      delay(300); // pequena pausa antes de voltar
+
+      // Retorna para a posicao inicial
+      digitalWrite(DIR_PIN, LOW);
+      for (int i = 0; i < passosMovimento; i++) {
+        passo(velocidade);
+        contadorPassos--;
+      }
+  
+      Serial.print("Posicao: ");
+      Serial.println(contadorPassos);
+      Serial.println("Aguardando novo comando (0 a 7):");
+
+    } else {
+      Serial.println("Valor invalido! Digite um numero de 0 a 7.");
+    }
   }
-
-  Serial.print("Posicao: ");
-  Serial.println(contadorPassos);
-
-  delay(1000);
-
-  // sentido 2
-  Serial.println("Anti-horario");
-
-  digitalWrite(DIR_PIN, LOW);
-
-  for (int i = 0; i < 2000; i++) {
-    passo();
-    contadorPassos--;
-  }
-
-  Serial.print("Posicao: ");
-  Serial.println(contadorPassos);
-
-  delay(1000);
 }
